@@ -16,13 +16,15 @@ const listAddress = [
     'address' : '0x233242524229b8cea887645746c8849577f88aa2',
     'tokenSymbol' : 'WBST',
     'tokenPair' : 'BUSD',
-    'chatId' : '@RocketPriceWBST'
+    'chatId' : '@RocketPriceWBST',
+    // 'chatId' : '@cek_bot_wsbt'
   },
   {
     'address' : '0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1',
     'tokenSymbol' : 'KIND',
     'tokenPair' : 'BUSD',
-    'chatId' : '@RocketPriceKIND'
+    'chatId' : '@RocketPriceKIND',
+    // 'chatId' : '@cek_bot_aja'
   }
 ];
 
@@ -43,7 +45,7 @@ function updatedata(){
  });
  
  if(baseArray.length>0){
-   console.log('ceeeeee : '+baseArray[0].chatId);
+  //  console.log('ceeeeee : '+baseArray[0].chatId);
   //  return;
    sendMessage( baseArray[0],baseArray[0].chatId);
    console.log(baseArray);
@@ -80,6 +82,7 @@ axios.get('https://api.bscscan.com/api', {
             d.to = data.to;
             d.time = data.timeStamp;
             d.chatId = dataAddress.chatId;
+            d.address = dataAddress.address;
 
             hashArray.push(d.hash);
              newArray.push(d);
@@ -100,7 +103,7 @@ axios.get('https://api.bscscan.com/api', {
 }
 
 function setType(data){
-  if(data.to === address){
+  if(data.to === data.address){
       return 'BUY';
   }else{
     return 'SELL';
@@ -111,29 +114,33 @@ function setData(data){
   let dataSend = {};
   // console.log(data[0]);
   // return;
-  if(data[0].sim === 'BUSD'){
-    dataSend.hash = data[0].hash;
-    dataSend.tokensim = data[1].sim;
-    dataSend.pair = data[0].sim;
-    dataSend.hash = data[0].hash;
-    dataSend.amount = data[0].amount;
-    dataSend.decimal = data[0].decimal;
-    dataSend.amountKind = data[1].amount;
-    dataSend.decimalKind = data[1].decimal;
-    dataSend.type = setType(data[0]);
-    dataSend.chatId = data[0].chatId;
+  if(data[0].sim  === 'BUSD' || data[1].sim  === 'BUSD'){
+    if(data[0].sim === 'BUSD'){
+      dataSend.hash = data[0].hash;
+      dataSend.tokensim = data[1].sim;
+      dataSend.pair = data[0].sim;
+      dataSend.hash = data[0].hash;
+      dataSend.amount = data[0].amount;
+      dataSend.decimal = data[0].decimal;
+      dataSend.amountKind = data[1].amount;
+      dataSend.decimalKind = data[1].decimal;
+      dataSend.type = setType(data[0]);
+      dataSend.chatId = data[0].chatId;
+    }else{
+      // console.log(data);
+      dataSend.hash = data[1].hash;
+      dataSend.tokensim = data[0].sim;
+      dataSend.pair = data[1].sim;
+      dataSend.hash = data[1].hash;
+      dataSend.type = setType(data[1]);
+      dataSend.amount = data[1].amount;
+      dataSend.decimal = data[1].decimal;
+      dataSend.amountKind = data[0].amount;
+      dataSend.decimalKind = data[0].decimal;
+      dataSend.chatId = data[0].chatId;
+    }
   }else{
-    // console.log(data);
-    dataSend.hash = data[1].hash;
-    dataSend.tokensim = data[0].sim;
-    dataSend.pair = data[1].sim;
-    dataSend.hash = data[1].hash;
-    dataSend.type = setType(data[1]);
-    dataSend.amount = data[1].amount;
-    dataSend.decimal = data[1].decimal;
-    dataSend.amountKind = data[0].amount;
-    dataSend.decimalKind = data[0].decimal;
-    dataSend.chatId = data[0].chatId;
+    console.log(data[0].sim);
   }
   // console.log(data[0].time +' dan '+tt);
 
