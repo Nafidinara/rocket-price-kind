@@ -1,7 +1,7 @@
 {
-  "name": "bot-kindcow",
+  "name": "bot-trading",
   "version": "1.0.0",
-  "description": "bot for telegram kindcow",
+  "description": "bot for trading",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,6 +13,7 @@
     "axios": "^0.21.1",
     "dotenv": "^8.2.0",
     "lodash": "^4.17.21",
-    "node-telegram-bot-api": "^0.51.0"
+    "node-fetch": "^2.6.1",
+    "readline-sync": "^1.4.10"
   }
 }

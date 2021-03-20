@@ -4,10 +4,27 @@ var lodash = require('lodash');
 const { has, identity } = require('lodash');
 
 // replace the value below with the Telegram token you receive from @BotFather
-const token = "1624397507:AAFdlyiFSbaWqGNsLLM3Wo3M60p-IFFpuLQ";
+// const token = "1624397507:AAFdlyiFSbaWqGNsLLM3Wo3M60p-IFFpuLQ";
+// const token = "1501556810:AAFnBz0lJYBHCXArecgd3iGjzzVl2mcqcZU";
+const token = "1704071215:AAFaNUguK4fXdQT5GMB3zq-VOAoZi8RdFzQ";
 const apikey = "N32IIV7CPUPHJH4ATA83D7IJZ7Y37VJ6II";
 const address = "0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1";
 const contract = "0xe3ba88c38d2789fe58465020cc0fb60b70c10d32";
+
+const listAddress = [
+  {
+    'address' : '0x233242524229b8cea887645746c8849577f88aa2',
+    'tokenSymbol' : 'WBST',
+    'tokenPair' : 'BUSD',
+    'chatId' : '@RocketPriceWBST'
+  },
+  {
+    'address' : '0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1',
+    'tokenSymbol' : 'KIND',
+    'tokenPair' : 'BUSD',
+    'chatId' : '@RocketPriceKIND'
+  }
+];
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token,{polling: false});
@@ -16,20 +33,30 @@ var arrayGroup = [];
 var hashArray = [];
 var baseArray = [];
 
-setInterval(updatedata,5000);
+setInterval(updatedata,10000);
 
- function updatedata(){
- // console.log( data );
+function updatedata(){
+  // return;
+ var data1 = Array();
  baseArray.forEach((data,index) => {
-  sendMessage( data  ,"@rocketPriceKIND");
-  console.log(baseArray);
-  baseArray.shift();
-  // console.log('jml array : '+baseArray.length);
+   data1 = data;
  });
-}
+ 
+ if(baseArray.length>0){
+   console.log('ceeeeee : '+baseArray[0].chatId);
+  //  return;
+   sendMessage( baseArray[0],baseArray[0].chatId);
+   console.log(baseArray);
+   baseArray.shift();
+   //return;
+   // console.log('jml array : '+baseArray.length);
+  }
+ }
 
 
-async function getTransaction(){
+async function getTransaction(dataAddress){
+  // console.log(dataAddress.address);
+  // return;
 axios.get('https://api.bscscan.com/api', {
     params: {
       apikey:apikey,
@@ -37,7 +64,7 @@ axios.get('https://api.bscscan.com/api', {
       offset:20,
       page:1,
     //   contractaddress:contract,
-      address:address,
+      address:dataAddress.address,
       module:'account',
       action:'tokentx'
     }
@@ -52,6 +79,7 @@ axios.get('https://api.bscscan.com/api', {
             d.decimal = data.tokenDecimal;
             d.to = data.to;
             d.time = data.timeStamp;
+            d.chatId = dataAddress.chatId;
 
             hashArray.push(d.hash);
              newArray.push(d);
@@ -64,7 +92,8 @@ axios.get('https://api.bscscan.com/api', {
 
   function manageArray(arr,arrayGroup){
     let datas = JSON.parse(JSON.stringify(arrayGroup));
-    console.log(datas);
+    // console.log(datas);
+    // return;
     arr.forEach((data,index) => {
       setData(datas[data]);
     });
@@ -81,6 +110,7 @@ var tt=0;
 function setData(data){
   let dataSend = {};
   // console.log(data[0]);
+  // return;
   if(data[0].sim === 'BUSD'){
     dataSend.hash = data[0].hash;
     dataSend.tokensim = data[1].sim;
@@ -91,6 +121,7 @@ function setData(data){
     dataSend.amountKind = data[1].amount;
     dataSend.decimalKind = data[1].decimal;
     dataSend.type = setType(data[0]);
+    dataSend.chatId = data[0].chatId;
   }else{
     // console.log(data);
     dataSend.hash = data[1].hash;
@@ -102,13 +133,14 @@ function setData(data){
     dataSend.decimal = data[1].decimal;
     dataSend.amountKind = data[0].amount;
     dataSend.decimalKind = data[0].decimal;
+    dataSend.chatId = data[0].chatId;
   }
-  console.log(data[0].time +' dan '+tt);
+  // console.log(data[0].time +' dan '+tt);
 
   if((data[0].time)*1 > tt){
     tt=data[0].time;
     baseArray.push(dataSend);
-    console.log('tambah data');
+    // console.log('tambah data');
   }
 }
   
@@ -138,8 +170,11 @@ function setData(data){
 }      
         async function main(){
         //    await getUpdates();
-          getTransaction();
-        //    sendMessage();
+        listAddress.forEach((data,index) => {
+          // console.log(data);
+          // return;
+          getTransaction(data);
+        });
         }
         
         setInterval(() => {
