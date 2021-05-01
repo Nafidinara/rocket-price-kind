@@ -1,31 +1,40 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 var lodash = require('lodash');
+const dotenv = require('dotenv');
+dotenv.config();
 const { has, identity } = require('lodash');
 
 // replace the value below with the Telegram token you receive from @BotFather
-// const token = "1624397507:AAFdlyiFSbaWqGNsLLM3Wo3M60p-IFFpuLQ";
-// const token = "1501556810:AAFnBz0lJYBHCXArecgd3iGjzzVl2mcqcZU";
-const token = "1704071215:AAFaNUguK4fXdQT5GMB3zq-VOAoZi8RdFzQ";
-const apikey = "N32IIV7CPUPHJH4ATA83D7IJZ7Y37VJ6II";
-const address = "0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1";
-const contract = "0xe3ba88c38d2789fe58465020cc0fb60b70c10d32";
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const apikey = process.env.BSC_API_KEY;
 
 const listAddress = [
   {
-    'address' : '0x233242524229b8cea887645746c8849577f88aa2',
+    'address' : '0x0511e110c536558db3dde405cd334621ca881221',
     'tokenSymbol' : 'WBST',
     'tokenPair' : 'BUSD',
-    'chatId' : '@RocketPriceWBST',
-    // 'chatId' : '@cek_bot_wsbt'
+    // 'chatId' : '@RocketPriceWBST',
+    'chatId' : process.env.WBST_CHAT_ID,
+      'rate' : 1
   },
   {
-    'address' : '0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1',
+    'address' : '0xebb77b3414af083e523df915f78df19b7ddd3969',
     'tokenSymbol' : 'KIND',
     'tokenPair' : 'BUSD',
-    'chatId' : '@RocketPriceKIND',
-    // 'chatId' : '@cek_bot_aja'
-  }
+    // 'chatId' : '@RocketPriceKIND',
+    'chatId' : process.env.KIND_CHAT_ID,
+      'rate' : 1
+  },
+    {
+        'address' : '0xc8a7436610400a271a8969ab17ec41229a5ae188',
+        'tokenSymbol' : 'OGC',
+        'tokenPair' : 'BUSD',
+        // 'chatId' : '@RocketPriceOGC',
+        'chatId' : process.env.OGC_CHAT_ID,
+        'rate' : 0
+    }
+
 ];
 
 // Create a bot that uses 'polling' to fetch new updates
@@ -48,15 +57,15 @@ function updatedata(){
   //  console.log('ceeeeee : '+baseArray[0].chatId);
   //  return;
    sendMessage( baseArray[0],baseArray[0].chatId);
-   console.log(baseArray);
+  //  console.log(baseArray);
    baseArray.shift();
    //return;
-   // console.log('jml array : '+baseArray.length);
+   console.log('jml array : '+baseArray.length);
   }
  }
 
 
-async function getTransaction(dataAddress){
+let getTransaction = (dataAddress) => {
   // console.log(dataAddress.address);
   // return;
 axios.get('https://api.bscscan.com/api', {
@@ -82,10 +91,11 @@ axios.get('https://api.bscscan.com/api', {
             d.to = data.to;
             d.time = data.timeStamp;
             d.chatId = dataAddress.chatId;
+              d.rate = dataAddress.rate;
             d.address = dataAddress.address;
 
             hashArray.push(d.hash);
-             newArray.push(d);
+            newArray.push(d);
           });
           arrayGroup = lodash.groupBy(newArray, 'hash');
 
@@ -109,11 +119,19 @@ function setType(data){
     return 'SELL';
   }
 }
+
 var tt=0;
 function setData(data){
   let dataSend = {};
   // console.log(data[0]);
   // return;
+    if (data[0].sim  === 'WBNB'){
+        data[0].sim = 'BUSD';
+    }
+    if (data[1].sim  === 'WBNB'){
+        data[0].sim = 'BUSD';
+    }
+
   if(data[0].sim  === 'BUSD' || data[1].sim  === 'BUSD'){
     if(data[0].sim === 'BUSD'){
       dataSend.hash = data[0].hash;
@@ -126,6 +144,7 @@ function setData(data){
       dataSend.decimalKind = data[1].decimal;
       dataSend.type = setType(data[0]);
       dataSend.chatId = data[0].chatId;
+        dataSend.rate = data[0].rate;
     }else{
       // console.log(data);
       dataSend.hash = data[1].hash;
@@ -138,6 +157,8 @@ function setData(data){
       dataSend.amountKind = data[0].amount;
       dataSend.decimalKind = data[0].decimal;
       dataSend.chatId = data[0].chatId;
+      dataSend.rate = data[0].rate;
+
     }
   }else{
     console.log(data[0].sim);
@@ -147,8 +168,17 @@ function setData(data){
   if((data[0].time)*1 > tt){
     tt=data[0].time;
     baseArray.push(dataSend);
-    // console.log('tambah data');
   }
+}
+
+let getPrice = async () => {
+    await axios.get('https://app.kindcow.finance/price')
+        .then((response) => {
+            let rateNow = response.data.price.BNB;
+            let token = listAddress.find(x => x.tokenSymbol === 'OGC');
+            token.rate = rateNow * 1;
+            console.log('BNB : '+token.rate);
+        });
 }
   
   async function sendMessage(msg,chatId){
@@ -164,18 +194,20 @@ function setData(data){
       };
 
         console.log('send to :'+chatId);
-        var a = msg.amountKind / (10**msg.decimalKind);
-        var b = msg.amount / (10**msg.decimal);
+        let a = msg.amountKind / (10**msg.decimalKind);
+        let b = msg.amount / (10**msg.decimal);
 
-     var rate = b / a;
+      let priceRate = msg.rate;
+     let rate = b / a * priceRate;
     //  console.log((msg.amountKind*1).toFixed(2));
 
         // bot.sendMessage(chatId,'*hiiiii*',opts);
-     if(msg.type=="BUY")   bot.sendMessage(chatId, ' *'+msg.type+'* 🚀🚀🚀 @ $'+rate.toFixed(5)+'\n\n'+ (a*1).toFixed(2) +' *$'+msg.tokensim+'* from '+(b*1).toFixed(2)+' *$'+msg.pair+'*\n\n👉 PancakeSwap [HASH](https://bscscan.com/tx/'+msg.hash+')',opts)
-     if(msg.type=="SELL")   bot.sendMessage(chatId, ' *'+msg.type+'* 🚗🚗🚗 @ $'+rate.toFixed(5)+'\n\n'+ (a*1).toFixed(2) +' *$'+msg.tokensim+'* for '+(b*1).toFixed(2)+' *$'+msg.pair+'*\n\n👉 PancakeSwap [HASH](https://bscscan.com/tx/'+msg.hash+')',opts)
+     if(msg.type=="BUY")   bot.sendMessage(chatId, ' *'+msg.type+'* 🚀🚀🚀 @ $'+rate.toFixed(5)+'\n\n'+ (a*1).toFixed(2) +' *$'+msg.tokensim+'* from '+(b * priceRate * 1).toFixed(2)+' *$'+msg.pair+'*\n\n👉 PancakeSwap [HASH](https://bscscan.com/tx/'+msg.hash+')',opts)
+     if(msg.type=="SELL")   bot.sendMessage(chatId, ' *'+msg.type+'* 🚗🚗🚗 @ $'+rate.toFixed(5)+'\n\n'+ (a*1).toFixed(2) +' *$'+msg.tokensim+'* for '+(b * priceRate * 1).toFixed(2)+' *$'+msg.pair+'*\n\n👉 PancakeSwap [HASH](https://bscscan.com/tx/'+msg.hash+')',opts)
       // console.log('jml hash : '+hashArray.length);
-}      
-        async function main(){
+}
+
+         let main = () => {
         //    await getUpdates();
         listAddress.forEach((data,index) => {
           // console.log(data);
@@ -183,8 +215,14 @@ function setData(data){
           getTransaction(data);
         });
         }
-        
+
+        setInterval(() => {
+            getPrice().then(r => console.log('updated'));
+        },60000);
+
         setInterval(() => {
             main();
         }, 30000);
-        main();
+        getPrice().then(x =>
+            main()
+        );
