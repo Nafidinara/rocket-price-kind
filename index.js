@@ -10,6 +10,14 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const apikey = process.env.BSC_API_KEY;
 
 const listAddress = [
+    {
+        'address' : '0xc8a7436610400a271a8969ab17ec41229a5ae188',
+        'tokenSymbol' : 'OGC',
+        'tokenPair' : 'BUSD',
+        // 'chatId' : '@RocketPriceOGC',
+        'chatId' : process.env.OGC_CHAT_ID,
+        'rate' : 1
+    },
   {
     'address' : '0x0511e110c536558db3dde405cd334621ca881221',
     'tokenSymbol' : 'WBST',
@@ -25,15 +33,7 @@ const listAddress = [
     // 'chatId' : '@RocketPriceKIND',
     'chatId' : process.env.KIND_CHAT_ID,
       'rate' : 1
-  },
-    {
-        'address' : '0xc8a7436610400a271a8969ab17ec41229a5ae188',
-        'tokenSymbol' : 'OGC',
-        'tokenPair' : 'BUSD',
-        // 'chatId' : '@RocketPriceOGC',
-        'chatId' : process.env.OGC_CHAT_ID,
-        'rate' : 1
-    }
+  }
 
 ];
 
@@ -43,36 +43,29 @@ var newArray = [];
 var arrayGroup = [];
 var hashArray = [];
 var baseArray = [];
+baseArray['KIND'] = [];
+baseArray['OGC'] = [];
+baseArray['WBST'] = [];
 
-setInterval(updatedata,10000);
+// setInterval(updateData,10000);
 
-function updatedata(){
-  // return;
- var data1 = Array();
- baseArray.forEach((data,index) => {
-   data1 = data;
- });
- 
- if(baseArray.length>0){
-  //  console.log('ceeeeee : '+baseArray[0].chatId);
-  //  return;
-   sendMessage( baseArray[0],baseArray[0].chatId);
-  //  console.log(baseArray);
-   baseArray.shift();
-   //return;
-   console.log('jml array : '+baseArray.length);
-  }
+function updateData(){
+        baseArray.forEach((data,index) => {
+            sendMessage( data,data.chatId);
+            baseArray.shift();
+            console.log('jml array : '+baseArray.length);
+        });
  }
 
 
 let getTransaction = (dataAddress) => {
   // console.log(dataAddress.address);
   // return;
-axios.get('https://api.bscscan.com/api', {
+ axios.get('https://api.bscscan.com/api', {
     params: {
       apikey:apikey,
       sort:'desc',
-      offset:20,
+      offset:10,
       page:1,
     //   contractaddress:contract,
       address:dataAddress.address,
@@ -91,7 +84,7 @@ axios.get('https://api.bscscan.com/api', {
             d.to = data.to;
             d.time = data.timeStamp;
             d.chatId = dataAddress.chatId;
-              d.rate = dataAddress.rate;
+            d.rate = dataAddress.rate;
             d.address = dataAddress.address;
 
             hashArray.push(d.hash);
@@ -103,11 +96,9 @@ axios.get('https://api.bscscan.com/api', {
         })
   }
 
-  function manageArray(arr,arrayGroup){
+  let manageArray = async (arr,arrayGroup) => {
     let datas = JSON.parse(JSON.stringify(arrayGroup));
-    // console.log(datas);
-    // return;
-    arr.forEach((data,index) => {
+     arr.forEach((data,index) => {
       setData(datas[data]);
     });
 }
@@ -120,8 +111,8 @@ function setType(data){
   }
 }
 
-var tt=0;
-function setData(data){
+let tt=0;
+let setData = async (data) => {
   let dataSend = {};
   // console.log(data[0]);
   // return;
@@ -129,7 +120,7 @@ function setData(data){
         data[0].sim = 'BUSD';
     }
     if (data[1].sim  === 'WBNB'){
-        data[0].sim = 'BUSD';
+        data[1].sim = 'BUSD';
     }
 
   if(data[0].sim  === 'BUSD' || data[1].sim  === 'BUSD'){
@@ -167,6 +158,7 @@ function setData(data){
 
   if((data[0].time)*1 > tt){
     tt=data[0].time;
+    console.log(dataSend.hash)
     baseArray.push(dataSend);
   }
 }
@@ -181,7 +173,7 @@ let getPrice = async () => {
         });
 }
   
-  async function sendMessage(msg,chatId){
+  function sendMessage(msg,chatId){
 
     const opts = {
         parse_mode: 'Markdown',
@@ -207,11 +199,8 @@ let getPrice = async () => {
       // console.log('jml hash : '+hashArray.length);
 }
 
-         let main = () => {
-        //    await getUpdates();
+         let main = async () => {
         listAddress.forEach((data,index) => {
-          // console.log(data);
-          // return;
           getTransaction(data);
         });
         }
@@ -221,7 +210,9 @@ let getPrice = async () => {
         },60000);
 
         setInterval(() => {
-            main();
+            main().then(r => {
+                updateData()
+            })
         }, 30000);
         getPrice().then(x =>
             main()
