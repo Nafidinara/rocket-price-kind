@@ -32,7 +32,7 @@ const listAddress = [
         'tokenPair' : 'BUSD',
         // 'chatId' : '@RocketPriceOGC',
         'chatId' : process.env.OGC_CHAT_ID,
-        'rate' : 0
+        'rate' : 1
     }
 
 ];
